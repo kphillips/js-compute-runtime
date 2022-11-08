@@ -16,7 +16,7 @@
 
 #include "host_call.h"
 #include "rust-url/rust-url.h"
-#include "xqd.h"
+#include "host_interface.h"
 
 struct JSErrorFormatString;
 

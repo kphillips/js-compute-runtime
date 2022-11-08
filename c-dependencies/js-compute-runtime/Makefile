@@ -17,6 +17,11 @@ else
   Q := @
 endif
 
+COMPONENT ?= false
+ifneq ($(COMPONENT),false)
+  CXX_OPT := -DCOMPONENT
+endif
+
 ROOT_SRC ?= $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))/..
 SM_SRC := $(ROOT_SRC)/spidermonkey/$(MODE)/
 SM_OBJ := $(SM_SRC)lib/*.o

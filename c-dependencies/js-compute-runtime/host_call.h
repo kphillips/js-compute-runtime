@@ -7,7 +7,7 @@
 #include "jsapi.h"
 #pragma clang diagnostic pop
 
-#include "xqd.h"
+#include "host_interface.h"
 
 enum class FastlyStatus {
   // Success value.

@@ -106,10 +106,6 @@ typedef enum BodyWriteEnd {
 
 // TODO ACF 2019-12-05: nicer type for the return value (XqdStatus)
 
-// Module fastly_abi
-WASM_IMPORT("fastly_abi", "init")
-int xqd_init(uint64_t abi_version);
-
 // Module fastly_uap
 WASM_IMPORT("fastly_uap", "parse")
 int xqd_uap_parse(const char *user_agent, size_t user_agent_len, char *family,

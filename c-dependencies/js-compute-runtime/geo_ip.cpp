@@ -3,7 +3,7 @@
 #include "geo_ip.h"
 #include "host_call.h"
 #include "js-compute-builtins.h" // for encode
-#include "xqd.h"
+#include "host_interface.h"
 
 JSString *get_geo_info(JSContext *cx, JS::HandleString address_str) {
   size_t address_len;

@@ -1,0 +1,7 @@
+
+enum fastly-status {
+    ok,
+    error,
+}
+
+fastly-abi-init: func(abi-version: u64) -> fastly-status

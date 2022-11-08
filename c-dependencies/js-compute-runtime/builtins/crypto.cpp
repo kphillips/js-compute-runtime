@@ -5,7 +5,7 @@
 #pragma clang diagnostic pop
 
 #include "crypto.h"
-#include "xqd.h"
+#include "host_interface.h"
 
 bool is_int_typed_array(JSObject *obj) {
   return JS_IsInt8Array(obj) || JS_IsUint8Array(obj) || JS_IsInt16Array(obj) ||
