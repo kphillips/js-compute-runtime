@@ -5,3 +5,5 @@ enum fastly-status {
 }
 
 fastly-abi-init: func(abi-version: u64) -> fastly-status
+
+fastly-http-req-new: func() -> result<u32, fastly-status>

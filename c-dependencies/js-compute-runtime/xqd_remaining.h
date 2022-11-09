@@ -204,9 +204,6 @@ int xqd_req_downstream_client_ip_addr_get(char *octets, size_t *nwritten);
 //    (result $err $fastly_status)
 // )
 
-WASM_IMPORT("fastly_http_req", "new")
-int xqd_req_new(RequestHandle *req_handle_out);
-
 WASM_IMPORT("fastly_http_req", "header_names_get")
 int xqd_req_header_names_get(RequestHandle req_handle, char *buf, size_t buf_len, uint32_t cursor,
                              int64_t *ending_cursor, size_t *nwritten);

@@ -8,3 +8,5 @@ WIT_BINDGEN="${WIT_BINDGEN:-$HOME/src/bytecodealliance/wit-bindgen/target/releas
   --import executed.wit \
   --out-dir . \
   --name executed
+
+mv executed.c executed.cpp

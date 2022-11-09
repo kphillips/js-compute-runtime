@@ -1623,7 +1623,7 @@ JSObject *create(JSContext *cx, HandleObject requestInstance, RequestHandle requ
 JSObject *create(JSContext *cx, HandleObject requestInstance, HandleValue input,
                  HandleValue init_val) {
   RequestHandle request_handle = {INVALID_HANDLE};
-  if (!HANDLE_RESULT(cx, xqd_req_new(&request_handle))) {
+  if (!HANDLE_RESULT(cx, fastly_http_req_new(&request_handle.handle))) {
     return nullptr;
   }
 
