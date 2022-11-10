@@ -28,9 +28,10 @@ SM_OBJ := $(SM_SRC)lib/*.o
 SM_OBJ += $(SM_SRC)lib/*.a
 FSM_SRC := $(ROOT_SRC)/js-compute-runtime/
 
+WASI_CC ?= /opt/wasi-sdk/bin/clang
 WASI_CXX ?= /opt/wasi-sdk/bin/clang++
 
-
+CFLAGS := -Wall -Werror
 CXX_FLAGS := -std=gnu++17 -Wall -Werror -Qunused-arguments -fno-sized-deallocation -fno-aligned-new -mthread-model single -fPIC -fno-rtti -fno-exceptions -fno-math-errno -pipe -fno-omit-frame-pointer -funwind-tables -I$(FSM_SRC) -I$(FSM_SRC)/host_interface
 DEFINES ?=
 LD_FLAGS := -Wl,-z,noexecstack -Wl,-z,text -Wl,-z,relro -Wl,-z,nocopyreloc -Wl,-z,stack-size=1048576 -Wl,--stack-first
@@ -48,9 +49,10 @@ WASM_STRIP = wasm-opt --strip-debug -o $1 $1
 endif
 endif
 
+FSM_C   := $(wildcard $(FSM_SRC)host_interface/*.c)
 FSM_CPP := $(wildcard $(FSM_SRC)*.cpp) $(wildcard $(FSM_SRC)builtins/*.cpp) $(wildcard $(FSM_SRC)host_interface/*.cpp)
-FSM_DEP := $(patsubst $(FSM_SRC)%.cpp,$(OBJDIR)%.d,$(FSM_CPP))
-FSM_OBJ := $(patsubst $(FSM_SRC)%.cpp,$(OBJDIR)%.o,$(FSM_CPP))
+FSM_DEP := $(patsubst $(FSM_SRC)%.cpp,$(OBJDIR)%.d,$(FSM_CPP)) $(patsubst $(FSM_SRC)%.c,$(OBJDIR)%.d,$(FSM_C))
+FSM_OBJ := $(patsubst $(FSM_SRC)%.cpp,$(OBJDIR)%.o,$(FSM_CPP)) $(patsubst $(FSM_SRC)%.c,$(OBJDIR)%.o,$(FSM_C))
 RUST_URL_SRC := $(FSM_SRC)rust-url
 RUST_URL_RS_FILES := $(shell find $(RUST_URL_SRC)/src -name '*.rs')
 RUST_URL_LIB := rusturl/wasm32-wasi/$(MODE)/librust_url.a
@@ -70,8 +72,8 @@ builtins:
 builtins/%.o: $(FSM_SRC)builtins/%.cpp $(FSM_SRC)Makefile $(RUST_URL_LIB) compiler_flags | builtins
 	$(WASI_CXX) $(CXX_FLAGS) $(CXX_OPT) $(DEFINES) -I $(SM_SRC)include -MMD -MP -c -o $@ $<
 
-host_interface/%.o: $(FSM_SRC)host_interface/%.cpp $(FSM_SRC)Makefile $(RUST_URL_LIB) compiler_flags | host_interface
-	$(WASI_CXX) $(CXX_FLAGS) $(CXX_OPT) $(DEFINES) -I $(SM_SRC)include -MMD -MP -c -o $@ $<
+host_interface/%.o: $(FSM_SRC)host_interface/%.c $(FSM_SRC)Makefile $(RUST_URL_LIB) compiler_flags | host_interface
+	$(WASI_CC) $(CFLAGS) $(CXX_OPT) $(DEFINES) -I $(SM_SRC)include -MMD -MP -c -o $@ $<
 
 js-compute-runtime.wasm: $(FSM_OBJ) $(SM_OBJ) $(RUST_URL_LIB)
 	$(WASI_CXX) $(CXX_FLAGS) $(CXX_OPT) $(DEFINES) $(LD_FLAGS) -o $@ $^

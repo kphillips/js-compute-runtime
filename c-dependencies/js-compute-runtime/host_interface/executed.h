@@ -1,5 +1,8 @@
 #ifndef __BINDINGS_EXECUTED_H
 #define __BINDINGS_EXECUTED_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -28,4 +31,7 @@ __attribute__((import_module("executed"), import_name("fastly-http-req-new")))
 void __wasm_import_executed_fastly_http_req_new(int32_t);
 executed_fastly_status_t executed_fastly_http_req_new(uint32_t *ret);
 
+#ifdef __cplusplus
+}
+#endif
 #endif
