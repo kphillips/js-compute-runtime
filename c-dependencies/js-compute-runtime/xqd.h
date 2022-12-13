@@ -34,6 +34,9 @@ extern "C" {
 #define BACKEND_CONFIG_CIPHERS (1u << 10)
 #define BACKEND_CONFIG_SNI_HOSTNAME (1u << 11)
 
+// Content encodings
+#define CONTENT_ENCODINGS_GZIP (1u << 0)
+
 typedef enum TLS {
   VERSION_1 = 0,
   VERSION_1_1 = 1,
@@ -120,6 +123,13 @@ int xqd_req_register_dynamic_backend(const char *name_prefix, size_t name_prefix
 WASM_IMPORT("fastly_http_req", "body_downstream_get")
 int xqd_req_body_downstream_get(fastly_request_handle_t *req_handle_out,
                                 fastly_body_handle_t *body_handle_out);
+
+/**
+ * Automatically decompress response for the selected encodings
+ */
+WASM_IMPORT("fastly_http_req", "auto_decompress_response_set")
+int xqd_req_auto_decompress_response_set(fastly_request_handle_t req_handle,
+                                         uint32_t content_encodings);
 
 /**
  * Set the cache override behavior for this request.

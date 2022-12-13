@@ -371,6 +371,12 @@ bool xqd_fastly_http_req_pending_req_wait(fastly_pending_request_handle_t h, fas
   return convert_result(xqd_req_pending_req_wait(h, &ret->f0, &ret->f1), err);
 }
 
+bool xqd_fastly_http_req_auto_decompress_response_set(fastly_request_handle_t h,
+                                                      fastly_content_encodings_t encodings,
+                                                      fastly_error_t *err) {
+  return convert_result(xqd_req_auto_decompress_response_set(h, encodings), err);
+}
+
 bool xqd_fastly_http_req_register_dynamic_backend(xqd_world_string_t *prefix,
                                                   xqd_world_string_t *target,
                                                   fastly_dynamic_backend_config_t *config,
