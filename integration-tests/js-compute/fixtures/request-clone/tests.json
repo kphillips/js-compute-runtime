@@ -38,5 +38,25 @@
     "downstream_response": {
       "status": 200
     }
+  },
+  "GET /request/clone/fetch-with-body": {
+    "environments": ["viceroy", "c@e"],
+    "downstream_request": {
+      "method": "GET",
+      "pathname": "/request/clone/fetch-with-body"
+    },
+    "downstream_response": {
+      "status": 200
+    }
+  },
+  "GET /request/clone/fetch-without-body": {
+    "environments": ["viceroy", "c@e"],
+    "downstream_request": {
+      "method": "GET",
+      "pathname": "/request/clone/fetch-without-body"
+    },
+    "downstream_response": {
+      "status": 200
+    }
   }
 }
