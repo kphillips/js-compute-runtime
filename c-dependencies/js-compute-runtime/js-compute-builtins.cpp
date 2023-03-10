@@ -1071,16 +1071,29 @@ bool process_body_read(JSContext *cx, HandleObject streamSource);
 
 bool process_pending_request(JSContext *cx, HandleObject request) {
 
+  printf("Waiting on request\n");
+  fflush(stdout);
+
   fastly_response_t ret = {INVALID_HANDLE, INVALID_HANDLE};
   fastly_error_t err;
-  bool ok =
-      xqd_fastly_http_req_pending_req_wait(builtins::Request::pending_handle(request), &ret, &err);
+  auto handle = builtins::Request::pending_handle(request);
+
+  printf("Waiting on request: %d\n", handle);
+  fflush(stdout);
+
+  bool ok = xqd_fastly_http_req_pending_req_wait(handle, &ret, &err);
+  printf("returned from waiting on: %d\n", handle);
+  fflush(stdout);
+
   fastly_response_handle_t response_handle = ret.f0;
   fastly_body_handle_t body = ret.f1;
+
 
   RootedObject response_promise(cx, builtins::Request::response_promise(request));
 
   if (!ok) {
+    printf("Failed when fetching resource\n");
+    fflush(stdout);
     JS_ReportErrorUTF8(cx, "NetworkError when attempting to fetch resource.");
     return RejectPromiseWithPendingError(cx, response_promise);
   }
@@ -1091,14 +1104,20 @@ bool process_pending_request(JSContext *cx, HandleObject request) {
     return false;
   }
 
+  printf("making a response\n");
+  fflush(stdout);
   RootedObject response(
       cx, builtins::Response::create(cx, response_instance, response_handle, body, true));
   if (!response) {
     return false;
   }
 
+  printf("setting url\n");
+  fflush(stdout);
   builtins::RequestOrResponse::set_url(response, builtins::RequestOrResponse::url(request));
   RootedValue response_val(cx, JS::ObjectValue(*response));
+  printf("all done!\n");
+  fflush(stdout);
   return JS::ResolvePromise(cx, response_promise, response_val);
 }
 
@@ -1174,40 +1193,67 @@ bool process_pending_async_tasks(JSContext *cx) {
   }
 
   size_t count = pending_async_tasks->length();
-  auto handles =
-      mozilla::MakeUnique<fastly_async_handle_t[]>(sizeof(fastly_async_handle_t) * count);
-  if (!handles) {
-    return false;
+
+  if (debug_logging_enabled()) {
+    printf("Waiting on %ld handles\n", count);
+    fflush(stdout);
   }
+
+  std::vector<fastly_async_handle_t> handles;
+  handles.reserve(count);
 
   for (size_t i = 0; i < count; i++) {
     HandleObject pending_obj = (*pending_async_tasks)[i];
     if (builtins::Request::is_instance(pending_obj)) {
-      handles[i] = builtins::Request::pending_handle(pending_obj);
+      handles.push_back(builtins::Request::pending_handle(pending_obj));
     } else {
       MOZ_ASSERT(builtins::NativeStreamSource::is_instance(pending_obj));
       RootedObject owner(cx, builtins::NativeStreamSource::owner(pending_obj));
-      handles[i] = builtins::RequestOrResponse::body_handle(owner);
+      handles.push_back(builtins::RequestOrResponse::body_handle(owner));
     }
   }
 
-  fastly_list_async_handle_t handle_list = {handles.get(), count};
+  fastly_list_async_handle_t handle_list = {handles.data(), count};
+
+  if (debug_logging_enabled()) {
+    printf("Selecting on %ld handles\n", count);
+    fflush(stdout);
+  }
 
   fastly_option_u32_t ret;
   fastly_error_t err;
   if (!xqd_fastly_async_io_select(&handle_list, timeout, &ret, &err)) {
     HANDLE_ERROR(cx, err);
+
+    if (debug_logging_enabled()) {
+      printf("Failed to select!!\n");
+      fflush(stdout);
+    }
+
     return false;
   }
 
+  if (debug_logging_enabled()) {
+    printf("Select finished\n");
+    fflush(stdout);
+  }
+
   if (!ret.is_some) {
+    printf("Running timers\n");
+    fflush(stdout);
     MOZ_ASSERT(!timers->empty());
     return timers->run_first_timer(cx);
   }
 
+  printf("No timers\n");
+  fflush(stdout);
+
   uint32_t ready_index = ret.val;
 
   if (ready_index == UINT32_MAX) {
+    printf("Nothing ready\n");
+    fflush(stdout);
+
     // The index will be UINT32_MAX if the timeout expires before any objects are ready for I/O.
     return true;
   }
@@ -1220,15 +1266,29 @@ bool process_pending_async_tasks(JSContext *cx) {
 
   HandleObject ready_obj = (*pending_async_tasks)[ready_index];
 
+  printf("Processing request/response: %d\n", handles[ready_index]);
+  fflush(stdout);
+
   bool ok;
   if (builtins::Request::is_instance(ready_obj)) {
+    printf("It's a request\n");
+    fflush(stdout);
     ok = process_pending_request(cx, ready_obj);
   } else {
+    printf("It's a response?\n");
+    fflush(stdout);
     MOZ_ASSERT(builtins::NativeStreamSource::is_instance(ready_obj));
     ok = process_body_read(cx, ready_obj);
   }
 
+  printf("Erasing task\n");
+  fflush(stdout);
+
   pending_async_tasks->erase(const_cast<JSObject **>(ready_obj.address()));
+
+  printf("All done: %d\n", ok);
+  fflush(stdout);
+
   return ok;
 }
 

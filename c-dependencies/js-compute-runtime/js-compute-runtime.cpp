@@ -193,6 +193,11 @@ static void DumpPendingException(JSContext *cx, const char *description) {
 }
 
 static void abort(JSContext *cx, const char *description) {
+  if (debug_logging_enabled()) {
+    printf("Aborting due to error: %s...\n", description);
+    fflush(stdout);
+  }
+
   // Note: we unconditionally print messages here, since they almost always
   // indicate serious bugs.
   if (JS_IsExceptionPending(cx)) {
@@ -479,7 +484,7 @@ int main(int argc, const char *argv[]) {
   __wasilibc_initialize_environ();
 
   if (debug_logging_enabled()) {
-    printf("Running JS handleRequest function for C@E service version %s\n",
+    printf("(cool) Running JS handleRequest function for C@E service version %s\n",
            getenv("FASTLY_SERVICE_VERSION"));
     fflush(stdout);
   }
