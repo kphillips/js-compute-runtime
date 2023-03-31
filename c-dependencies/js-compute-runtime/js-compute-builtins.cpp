@@ -1276,6 +1276,93 @@ bool math_random(JSContext *cx, unsigned argc, Value *vp) {
   return true;
 }
 
+/* ES5 15.4.4.19. */
+// https://tc39.es/ecma262/#sec-array.prototype.map
+static bool array_map(JSContext *cx, unsigned argc, Value *vp) {
+  JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
+
+  if (!args.requireAtLeast(cx, "Array.prototype.map", 1)) {
+    return false;
+  }
+  // 1. Let O be ? ToObject(this value).
+  JS::RootedObject O(cx, JS::ToObject(cx, args.thisv()));
+  if (!O) {
+    return false;
+  }
+
+  // 2. Let len be ? LengthOfArrayLike(O).
+  uint32_t len;
+  {
+    JS::RootedValue length_val(cx);
+    if (!JS_GetProperty(cx, O, "length", &length_val)) {
+      return false;
+    }
+    len = length_val.toNumber();
+  }
+
+  // 3. If IsCallable(callbackfn) is false, throw a TypeError exception.
+  auto arg0 = args.get(0);
+  if (!arg0.isObject() || !JS::IsCallable(&arg0.toObject())) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_NOT_FUNCTION);
+    return false;
+  }
+  JS::RootedObject callbackfn(cx, &arg0.toObject());
+  if (!callbackfn) {
+    return false;
+  }
+
+  JS::RootedValue thisv(cx, args.length() >= 2 ? args[1] : JS::UndefinedValue());
+
+  // 4. Let A be ? ArraySpeciesCreate(O, len).
+  JS::Rooted<JSObject *> A(cx, JS::NewArrayObject(cx, len));
+  if (!A) {
+    return false;
+  }
+
+  // 5. Let k be 0.
+  uint32_t k = 0;
+
+  // 6. Repeat, while k < len,
+  JS::RootedValueArray<3> callbackfnargs(cx);
+  bool kPresent;
+  JS::RootedValue kValue(cx);
+  JS::RootedValue mappedValue(cx);
+  while (k < len) {
+    // a. Let Pk be ! ToString(𝔽(k)).
+    // b. Let kPresent be ? HasProperty(O, Pk).
+    if (!JS_HasElement(cx, O, k, &kPresent)) {
+      return false;
+    }
+
+    // c. If kPresent is true, then
+    if (kPresent) {
+      // i. Let kValue be ? Get(O, Pk).
+      if (!JS_GetElement(cx, O, k, &kValue)) {
+        return false;
+      }
+      // ii. Let mappedValue be ? Call(callbackfn, thisArg, « kValue, 𝔽(k), O »).
+      callbackfnargs[0].set(kValue);
+      callbackfnargs[1].setNumber(k);
+      callbackfnargs[2].setObject(*O);
+      if (!JS::Call(cx, thisv, callbackfn, callbackfnargs, &mappedValue)) {
+        return false;
+      }
+      // iii. Perform ? CreateDataPropertyOrThrow(A, Pk, mappedValue).
+      if (!JS_SetElement(cx,A, k, mappedValue)) {
+        JS_ReportOutOfMemory(cx);
+        return false;
+      }
+    }
+
+    // d. Set k to k + 1.
+    k++;
+  }
+
+  // 7. Return A.
+  args.rval().setObject(*A);
+  return true;
+}
+
 bool define_fastly_sys(JSContext *cx, HandleObject global) {
   // Allocating the reusable hostcall buffer here means it's baked into the
   // snapshot, and since it's all zeros, it won't increase the size of the
@@ -1360,6 +1447,22 @@ bool define_fastly_sys(JSContext *cx, HandleObject global) {
 
   const JSFunctionSpec funs[] = {JS_FN("random", math_random, 0, 0), JS_FS_END};
   if (!JS_DefineFunctions(cx, math, funs)) {
+    return false;
+  }
+
+  JS::RootedValue array_val(cx);
+  if (!JS_GetProperty(cx, global, "Array", &array_val)) {
+    return false;
+  }
+  JS::RootedObject array(cx, &array_val.toObject());
+  JS::RootedValue array_proto_val(cx);
+  if (!JS_GetProperty(cx, array, "prototype", &array_proto_val)) {
+    return false;
+  }
+  JS::RootedObject array_proto(cx, &array_proto_val.toObject());
+
+  const JSFunctionSpec array_proto_functions[] = {JS_FN("map", array_map, 1, 0), JS_FS_END};
+  if (!JS_DefineFunctions(cx, array_proto, array_proto_functions)) {
     return false;
   }
 
