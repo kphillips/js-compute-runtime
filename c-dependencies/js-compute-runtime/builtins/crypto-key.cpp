@@ -221,7 +221,8 @@ const JSPropertySpec CryptoKey::properties[] = {
     JS_PSG("usages", CryptoKey::usages_get, JSPROP_ENUMERATE),
     JS_STRING_SYM_PS(toStringTag, "CryptoKey", JSPROP_READONLY),
     JS_PS_END};
-
+const JSFunctionSpec CryptoKey::static_methods[] = {JS_FS_END};
+const JSPropertySpec CryptoKey::static_properties[] = {JS_PS_END};
 // There is no directly exposed constructor in the CryptoKey interface
 // https://w3c.github.io/webcrypto/#cryptokey-interface We throw a JS Error if the application
 // attempts to call the CryptoKey constructor directly

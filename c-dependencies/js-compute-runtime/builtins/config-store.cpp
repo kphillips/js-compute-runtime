@@ -53,6 +53,8 @@ bool ConfigStore::get(JSContext *cx, unsigned argc, JS::Value *vp) {
 const JSFunctionSpec ConfigStore::methods[] = {JS_FN("get", get, 1, JSPROP_ENUMERATE), JS_FS_END};
 
 const JSPropertySpec ConfigStore::properties[] = {JS_PS_END};
+const JSFunctionSpec ConfigStore::static_methods[] = {JS_FS_END};
+const JSPropertySpec ConfigStore::static_properties[] = {JS_PS_END};
 
 bool ConfigStore::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   REQUEST_HANDLER_ONLY("The ConfigStore builtin");

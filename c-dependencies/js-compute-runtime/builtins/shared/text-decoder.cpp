@@ -48,6 +48,9 @@ const JSPropertySpec TextDecoder::properties[] = {
     JS_PS_END,
 };
 
+const JSFunctionSpec TextDecoder::static_methods[] = {JS_FS_END};
+const JSPropertySpec TextDecoder::static_properties[] = {JS_PS_END};
+
 bool TextDecoder::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("TextDecoder", 0);
 

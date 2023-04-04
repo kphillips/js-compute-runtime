@@ -62,6 +62,8 @@ const JSPropertySpec TextEncoder::properties[] = {
     JS_STRING_SYM_PS(toStringTag, "TextEncoder", JSPROP_READONLY),
     JS_PS_END,
 };
+const JSFunctionSpec TextEncoder::static_methods[] = {JS_FS_END};
+const JSPropertySpec TextEncoder::static_properties[] = {JS_PS_END};
 
 bool TextEncoder::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
   CTOR_HEADER("TextEncoder", 0);
