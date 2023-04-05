@@ -221,7 +221,7 @@ jobs:
           - log
           - missing-backend
           - multiple-set-cookie
-          - object-store
+          - kv-store
           - random
           - regex
           - request-cache-key
@@ -364,7 +364,7 @@ jobs:
           - 'geoip'
           - 'hello-world'
           - 'multiple-set-cookie'
-          - 'object-store'
+          - 'kv-store'
           - 'request-clone'
           - 'request-headers'
           - 'request-limits'
