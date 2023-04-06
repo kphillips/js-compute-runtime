@@ -329,7 +329,7 @@ int object_store_get_async(
 
 WASM_IMPORT("fastly_object_store", "lookup_wait")
 int object_store_lookup_wait(fastly_pending_object_store_lookup_handle_t handle,
-                             fastly_option_body_handle_t *handle_out);
+                             fastly_body_handle_t *handle_out);
 
 WASM_IMPORT("fastly_object_store", "insert")
 int object_store_insert(fastly_object_store_handle_t object_store_handle, const char *key,

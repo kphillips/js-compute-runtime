@@ -175,6 +175,54 @@ bool parse_and_validate_key(JSContext *cx, JS::UniqueChars *key, size_t len) {
 
 } // namespace
 
+fastly_pending_object_store_lookup_handle_t ObjectStore::pending_lookup_handle(JSObject *self) {
+  MOZ_ASSERT(ObjectStore::is_instance(self));
+
+  JS::Value handle_value =
+      JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::PendingLookupHandle));
+
+  if (handle_value.isInt32()) {
+    return handle_value.toInt32();
+  }
+
+  return INVALID_HANDLE;
+}
+
+bool ObjectStore::process_pending_object_store_lookup(JSContext *cx, JS::HandleObject self) {
+  MOZ_ASSERT(ObjectStore::is_instance(self));
+
+  fastly_option_body_handle_t ret;
+  fastly_error_t err;
+  bool ok = fastly_object_store_lookup_wait(builtins::ObjectStore::pending_lookup_handle(self),
+                                            &ret, &err);
+  if (!ok) {
+    HANDLE_ERROR(cx, err);
+    return false;
+  }
+
+  auto pending_promise_value =
+      JS::GetReservedSlot(self, static_cast<uint32_t>(Slots::PendingLookupPromise));
+  MOZ_ASSERT(pending_promise_value.isObject());
+  JS::RootedObject result_promise(cx, &pending_promise_value.toObject());
+
+  // When no entry is found, we are going to resolve the Promise with `null`.
+  if (!ret.is_some) {
+    JS::RootedValue result(cx);
+    result.setNull();
+    JS::ResolvePromise(cx, result_promise, result);
+  } else {
+    JS::RootedObject entry(cx, ObjectStoreEntry::create(cx, ret.val));
+    if (!entry) {
+      return false;
+    }
+    JS::RootedValue result(cx);
+    result.setObject(*entry);
+    JS::ResolvePromise(cx, result_promise, result);
+  }
+
+  return true;
+}
+
 bool ObjectStore::get(JSContext *cx, unsigned argc, JS::Value *vp) {
   METHOD_HEADER(1)
 
@@ -195,26 +243,19 @@ bool ObjectStore::get(JSContext *cx, unsigned argc, JS::Value *vp) {
   if (!parse_and_validate_key(cx, &key_chars, key_str.len))
     return ReturnPromiseRejectedWithPendingError(cx, args);
 
-  fastly_option_body_handle_t ret;
+  fastly_pending_object_store_lookup_handle_t ret;
   fastly_error_t err;
-  if (!fastly_object_store_lookup(object_store_handle(self), &key_str, &ret, &err)) {
+  if (!fastly_object_store_lookup_async(object_store_handle(self), &key_str, &ret, &err)) {
     HANDLE_ERROR(cx, err);
     return false;
   }
 
-  // When no entry is found, we are going to resolve the Promise with `null`.
-  if (!ret.is_some) {
-    JS::RootedValue result(cx);
-    result.setNull();
-    JS::ResolvePromise(cx, result_promise, result);
-  } else {
-    JS::RootedObject entry(cx, ObjectStoreEntry::create(cx, ret.val));
-    if (!entry) {
-      return false;
-    }
-    JS::RootedValue result(cx);
-    result.setObject(*entry);
-    JS::ResolvePromise(cx, result_promise, result);
+  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::PendingLookupHandle), JS::Int32Value(ret));
+  JS::SetReservedSlot(self, static_cast<uint32_t>(Slots::PendingLookupPromise),
+                      JS::ObjectValue(*result_promise));
+
+  if (!pending_async_tasks->append(self)) {
+    return false;
   }
 
   args.rval().setObject(*result_promise);
